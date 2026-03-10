@@ -81,50 +81,43 @@ async function downloadAndImport() {
 	try {
 			statusEl.textContent = 'Fetching video information...';
 
-			// Call the API to get video information
-			const apiUrl = `https://twitsave.com/info?url=${url}`;
-			const response = await fetch(apiUrl);
-			const text = await response.text();
-			const parser = new DOMParser();
-			const doc = parser.parseFromString(text, 'text/html');
+			const response = await fetch('https://eagle-twitter-video-api.vercel.app/api/extract', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ url })
+			});
 
-			// Find all video containers
-			const videoContainers = doc.querySelectorAll('.origin-top-right');
-			const tweetText = doc.querySelector('.leading-tight p.m-2')?.textContent || 'Twitter Video';
+			const data = await response.json();
 
-			if (videoContainers.length === 0) {
-					returnError('No videos found in the tweet.');
-					return;
+			if (!response.ok) {
+				const ERROR_MESSAGES = {
+					NO_VIDEO: 'This tweet does not contain a video',
+					UNSUPPORTED: 'This type of content is not supported',
+					UNAVAILABLE: 'This tweet is private or unavailable',
+					RATE_LIMITED: 'Service is temporarily busy, please try again later',
+				};
+				returnError(ERROR_MESSAGES[data.code] || 'Something went wrong, please try again');
+				return;
 			}
 
-			statusEl.textContent = `Found ${videoContainers.length} video(s). Downloading...`;
+			statusEl.textContent = 'Downloading video...';
 
-			// Process each video
-			for (let i = 0; i < videoContainers.length; i++) {
-					const container = videoContainers[i];
-					const qualityButtons = container.querySelectorAll('a');
-					const videoUrl = qualityButtons[0]?.href;
+			const caption = data.caption
+				?.replace(/https?:\/\/\S+/gi, '')
+				.replace(/\s{2,}/g, ' ')
+				.trim();
 
-					if (!videoUrl) {
-							statusEl.textContent = `Could not find download URL for video ${i + 1}`;
-							continue;
-					}
+			await eagle.item.addFromURL(data.video_url, {
+        name: caption || "Twitter Video",
+        website: url,
+        tags: ["twitter"],
+      });
 
-					// Add to Eagle using the API
-					const itemId = await eagle.item.addFromURL(videoUrl, {
-							name: videoContainers.length === 1 ? tweetText : `${tweetText}_video${i + 1}`,
-							website: url,
-							tags: ['twitter']
-					});
-
-					statusEl.textContent = `Imported video ${i + 1} of ${videoContainers.length}`;
-			}
-
-			statusEl.textContent = 'All videos imported successfully!';
+			statusEl.textContent = 'Video imported successfully!';
 			urlInput.value = '';
 
 	} catch (error) {
-			statusEl.textContent = `Error: ${error.message}`;
+			returnError('Could not connect to the server, please try again');
 			console.error('Error:', error);
 	}
 }
