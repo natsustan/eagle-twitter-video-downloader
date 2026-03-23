@@ -4,10 +4,6 @@
 
 This Eagle plugin lets you download high-quality videos from Twitter / X and automatically add their URL and title.
 
-> [!WARNING]  
-> This plugin relies on [Twitsave](https://twitsave.com/) to download videos. 
-> See issue [Remove third-party dependency on Twitsave](https://github.com/OlivierEstevez/eagle-twitter-video-downloader/issues/1).
-
 ## Installation
 
 ### Eagle Community
