@@ -9,11 +9,27 @@ eagle.onPluginCreate(async (plugin) => {
 		window.close()
 	})
 
+	const settingsOverlay = document.getElementById('settingsOverlay');
+
 	document.addEventListener("keydown", (e) => {
 		if (e.key === "Escape") {
-			window.close()
+			if (settingsOverlay.classList.contains('open')) {
+				settingsOverlay.classList.remove('open');
+			} else {
+				window.close();
+			}
 		}
 	})
+
+	document.getElementById('settingsButton').addEventListener('click', () => {
+		settingsOverlay.classList.toggle('open');
+	});
+
+	const autoCloseCheckbox = document.getElementById('autoClose');
+	autoCloseCheckbox.checked = localStorage.getItem('autoClose') === 'true';
+	autoCloseCheckbox.addEventListener('change', () => {
+		localStorage.setItem('autoClose', autoCloseCheckbox.checked);
+	});
 
 	document.getElementById('downloadForm').addEventListener('submit', async (e) => {
 		e.preventDefault();
@@ -115,6 +131,10 @@ async function downloadAndImport() {
 
 			statusEl.textContent = 'Video imported successfully!';
 			urlInput.value = '';
+
+			if (localStorage.getItem('autoClose') === 'true') {
+				setTimeout(() => window.close(), 1000);
+			}
 
 	} catch (error) {
 			returnError('Could not connect to the server, please try again');
